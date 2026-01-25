@@ -93,7 +93,7 @@ export default function SearchForm({ onSubmit, isDisabled }: SearchFormProps) {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g., web development jobs in chicago"
+              placeholder="GTM Engineering jobs in New York"
               required
               disabled={isDisabled}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -294,7 +294,7 @@ export default function SearchForm({ onSubmit, isDisabled }: SearchFormProps) {
             type="text"
             value={excludeJobPublishers}
             onChange={(e) => setExcludeJobPublishers(e.target.value)}
-            placeholder="e.g., BeeBe, Dice"
+            placeholder="Clay"
             disabled={isDisabled}
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:cursor-not-allowed"
           />

@@ -9,7 +9,7 @@ interface EditApiKeyModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => void;
-  onTestConnection?: (apiKey: string, host: string) => Promise<boolean>;
+  onTestConnection?: (apiKey: string, host?: string) => Promise<boolean>;
 }
 
 export default function EditApiKeyModal({
@@ -20,7 +20,6 @@ export default function EditApiKeyModal({
   onTestConnection,
 }: EditApiKeyModalProps) {
   const [name, setName] = useState('');
-  const [host, setHost] = useState('');
   const [apiKeyValue, setApiKeyValue] = useState('');
   const [creditsPerMonth, setCreditsPerMonth] = useState(0);
   const [rpmLimit, setRpmLimit] = useState<number | undefined>(undefined);
@@ -31,7 +30,6 @@ export default function EditApiKeyModal({
   useEffect(() => {
     if (apiKey && isOpen) {
       setName(apiKey.name);
-      setHost(apiKey.host);
       setApiKeyValue('');
       setCreditsPerMonth(apiKey.creditsPerMonth);
       setRpmLimit(apiKey.rpmLimit);
@@ -51,11 +49,6 @@ export default function EditApiKeyModal({
       return;
     }
 
-    if (!host.trim()) {
-      setError('Host is required');
-      return;
-    }
-
     if (creditsPerMonth < 0) {
       setError('Credits per month must be a positive number');
       return;
@@ -69,7 +62,6 @@ export default function EditApiKeyModal({
 
     const updates: any = {
       name: name.trim(),
-      host: host.trim(),
       creditsPerMonth,
       rpmLimit: rpmLimit || undefined,
     };
@@ -104,7 +96,7 @@ export default function EditApiKeyModal({
 
     try {
       if (onTestConnection) {
-        const success = await onTestConnection(keyToTest, host.trim() || apiKey.host);
+        const success = await onTestConnection(keyToTest, apiKey.host);
         setTestResult({
           success,
           message: success
@@ -132,14 +124,14 @@ export default function EditApiKeyModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-whitebg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900text-white">Edit API Key</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+          <h2 className="text-xl font-semibold text-gray-900">Edit API Key</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600hover:text-gray-300"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
             aria-label="Close"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,10 +141,10 @@ export default function EditApiKeyModal({
         </div>
 
         {/* Content */}
-        <div className="p-4 space-y-4">
+        <div className="p-6 space-y-4 bg-white">
           {/* Name */}
           <div>
-            <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700text-gray-300 mb-1">
+            <label htmlFor="edit-name" className="block text-sm font-medium text-gray-700 mb-2">
               Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -160,28 +152,13 @@ export default function EditApiKeyModal({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500bg-gray-700text-white text-sm"
-            />
-          </div>
-
-          {/* Host */}
-          <div>
-            <label htmlFor="edit-host" className="block text-sm font-medium text-gray-700text-gray-300 mb-1">
-              Host <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="edit-host"
-              type="text"
-              value={host}
-              onChange={(e) => setHost(e.target.value)}
-              placeholder="e.g., jsearch.p.rapidapi.com"
-              className="w-full px-3 py-2 border border-gray-300border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500bg-gray-700text-white text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-sm"
             />
           </div>
 
           {/* API Key */}
           <div>
-            <label htmlFor="edit-api-key" className="block text-sm font-medium text-gray-700text-gray-300 mb-1">
+            <label htmlFor="edit-api-key" className="block text-sm font-medium text-gray-700 mb-2">
               API Key <span className="text-red-500">*</span>
             </label>
             <input
@@ -190,9 +167,9 @@ export default function EditApiKeyModal({
               value={apiKeyValue}
               onChange={(e) => setApiKeyValue(e.target.value)}
               placeholder="Leave blank to keep current"
-              className="w-full px-3 py-2 border border-gray-300border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500bg-gray-700text-white text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-sm"
             />
-            <p className="mt-1 text-xs text-gray-500text-gray-400">
+            <p className="mt-1 text-xs text-gray-500">
               (leave blank to keep current)
             </p>
             {onTestConnection && (
@@ -200,7 +177,7 @@ export default function EditApiKeyModal({
                 type="button"
                 onClick={handleTestConnection}
                 disabled={isTesting}
-                className="mt-2 px-3 py-1.5 bg-gray-200bg-gray-700 text-gray-700text-gray-300 rounded-md hover:bg-gray-300hover:bg-gray-600 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isTesting ? 'Testing...' : 'Test Connection'}
               </button>
@@ -210,7 +187,7 @@ export default function EditApiKeyModal({
                 className={`mt-2 p-2 rounded-md text-xs ${
                   testResult.success
                     ? 'bg-blue-50 text-blue-800'
-                    : 'bg-red-50bg-red-900/20 text-red-800text-red-200'
+                    : 'bg-red-50 text-red-800'
                 }`}
               >
                 {testResult.message}
@@ -220,7 +197,7 @@ export default function EditApiKeyModal({
 
           {/* Credits per Month */}
           <div>
-            <label htmlFor="edit-credits" className="block text-sm font-medium text-gray-700text-gray-300 mb-1">
+            <label htmlFor="edit-credits" className="block text-sm font-medium text-gray-700 mb-2">
               Credits per Month <span className="text-red-500">*</span>
             </label>
             <input
@@ -229,13 +206,13 @@ export default function EditApiKeyModal({
               min="0"
               value={creditsPerMonth}
               onChange={(e) => setCreditsPerMonth(parseInt(e.target.value) || 0)}
-              className="w-full px-3 py-2 border border-gray-300border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500bg-gray-700text-white text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-sm"
             />
           </div>
 
           {/* RPM Limit */}
           <div>
-            <label htmlFor="edit-rpm" className="block text-sm font-medium text-gray-700text-gray-300 mb-1">
+            <label htmlFor="edit-rpm" className="block text-sm font-medium text-gray-700 mb-2">
               RPM Limit
             </label>
             <input
@@ -245,28 +222,28 @@ export default function EditApiKeyModal({
               value={rpmLimit || ''}
               onChange={(e) => setRpmLimit(e.target.value ? parseInt(e.target.value) : undefined)}
               placeholder="Optional"
-              className="w-full px-3 py-2 border border-gray-300border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500bg-gray-700text-white text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-sm"
             />
           </div>
 
           {error && (
-            <div className="p-2 bg-red-50bg-red-900/20 border border-red-200border-red-800 rounded-md">
-              <p className="text-xs text-red-800text-red-200">{error}</p>
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 p-4 border-t border-gray-200border-gray-700">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50 rounded-b-lg">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-whitebg-gray-700 text-gray-700text-gray-300 border border-gray-300border-gray-600 rounded-md hover:bg-gray-50hover:bg-gray-600 text-sm font-medium"
+            className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 text-sm font-medium transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium shadow-sm"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium shadow-sm transition-colors"
           >
             Save
           </button>

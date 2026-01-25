@@ -118,7 +118,7 @@ export default function SearchSection({ onSearch, isDisabled }: SearchSectionPro
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="e.g., web development jobs in chicago"
+          placeholder="GTM Engineering jobs in New York"
           required
           disabled={isDisabled}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
@@ -321,7 +321,7 @@ export default function SearchSection({ onSearch, isDisabled }: SearchSectionPro
           type="text"
           value={excludeJobPublishers}
           onChange={(e) => setExcludeJobPublishers(e.target.value)}
-          placeholder="e.g., BeeBe, Dice"
+          placeholder="Clay"
           disabled={isDisabled}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
         />

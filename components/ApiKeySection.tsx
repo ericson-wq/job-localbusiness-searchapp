@@ -5,8 +5,8 @@ import {
   getAllApiKeys,
   updateApiKey,
   migrateOldApiKey,
-  ApiKey,
 } from '@/lib/api-keys-storage';
+import { ApiKey } from '@/types/api-key';
 import AddApiKeyModal from './AddApiKeyModal';
 import EditApiKeyModal from './EditApiKeyModal';
 import DeleteApiKeyModal from './DeleteApiKeyModal';
