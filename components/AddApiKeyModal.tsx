@@ -8,15 +8,22 @@ interface AddApiKeyModalProps {
   onClose: () => void;
   onAdd: () => void;
   onTestConnection?: (apiKey: string, host?: string) => Promise<boolean>;
+  defaultHost?: string;
+  serviceType?: 'job-search' | 'local-business';
 }
 
 const DEFAULT_HOST = 'jsearch.p.rapidapi.com';
 
-export default function AddApiKeyModal({ isOpen, onClose, onAdd, onTestConnection }: AddApiKeyModalProps) {
+export default function AddApiKeyModal({ 
+  isOpen, 
+  onClose, 
+  onAdd, 
+  onTestConnection,
+  defaultHost = DEFAULT_HOST,
+  serviceType = 'job-search'
+}: AddApiKeyModalProps) {
   const [name, setName] = useState('');
   const [apiKeyValue, setApiKeyValue] = useState('');
-  const [creditsPerMonth, setCreditsPerMonth] = useState(10000);
-  const [rpmLimit, setRpmLimit] = useState<number | undefined>(undefined);
   const [error, setError] = useState('');
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -42,26 +49,19 @@ export default function AddApiKeyModal({ isOpen, onClose, onAdd, onTestConnectio
       return;
     }
 
-    if (creditsPerMonth < 0) {
-      setError('Credits per month must be a positive number');
-      return;
-    }
-
     const newKey = addApiKey({
       name: name.trim(),
-      host: DEFAULT_HOST,
+      host: defaultHost,
       apiKey: apiKeyValue.trim(),
-      creditsPerMonth,
-      rpmLimit: rpmLimit || undefined,
+      creditsPerMonth: 0,
       isActive: true,
+      serviceType,
     });
 
     if (newKey) {
       // Reset form
       setName('');
       setApiKeyValue('');
-      setCreditsPerMonth(10000);
-      setRpmLimit(undefined);
       onAdd();
       onClose();
     } else {
@@ -81,7 +81,7 @@ export default function AddApiKeyModal({ isOpen, onClose, onAdd, onTestConnectio
 
     try {
       if (onTestConnection) {
-        const success = await onTestConnection(apiKeyValue.trim(), DEFAULT_HOST);
+        const success = await onTestConnection(apiKeyValue.trim(), defaultHost);
         setTestResult({
           success,
           message: success
@@ -137,7 +137,7 @@ export default function AddApiKeyModal({ isOpen, onClose, onAdd, onTestConnectio
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., 50k Creds"
+              placeholder="e.g., 50 job search API"
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-sm"
             />
           </div>
@@ -176,37 +176,6 @@ export default function AddApiKeyModal({ isOpen, onClose, onAdd, onTestConnectio
                 {testResult.message}
               </div>
             )}
-          </div>
-
-          {/* Credits per Month */}
-          <div>
-            <label htmlFor="add-credits" className="block text-sm font-medium text-gray-700 mb-2">
-              Credits per Month <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="add-credits"
-              type="number"
-              min="0"
-              value={creditsPerMonth}
-              onChange={(e) => setCreditsPerMonth(parseInt(e.target.value) || 0)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-sm"
-            />
-          </div>
-
-          {/* RPM Limit */}
-          <div>
-            <label htmlFor="add-rpm" className="block text-sm font-medium text-gray-700 mb-2">
-              RPM Limit
-            </label>
-            <input
-              id="add-rpm"
-              type="number"
-              min="1"
-              value={rpmLimit || ''}
-              onChange={(e) => setRpmLimit(e.target.value ? parseInt(e.target.value) : undefined)}
-              placeholder="Optional"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900 text-sm"
-            />
           </div>
 
           {error && (

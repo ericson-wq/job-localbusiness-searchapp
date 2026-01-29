@@ -150,6 +150,41 @@ export function hasApiKey(): boolean {
 }
 
 /**
+ * Gets API keys filtered by service type
+ */
+export function getApiKeysByServiceType(serviceType: 'job-search' | 'local-business'): ApiKey[] {
+  const keys = getAllApiKeys();
+  return keys.filter(key => {
+    // If serviceType is set, use it; otherwise infer from host
+    if (key.serviceType) {
+      return key.serviceType === serviceType;
+    }
+    // Fallback to host-based detection
+    if (serviceType === 'local-business') {
+      return key.host.includes('local-business-data') || key.host.includes('local-business');
+    }
+    // Default to job-search for other hosts
+    return !key.host.includes('local-business-data') && !key.host.includes('local-business');
+  });
+}
+
+/**
+ * Gets the first active API key for a specific service type
+ */
+export function getActiveApiKeyByServiceType(serviceType: 'job-search' | 'local-business'): ApiKey | null {
+  const keys = getApiKeysByServiceType(serviceType);
+  return keys.find(k => k.isActive) || null;
+}
+
+/**
+ * Checks if an API key exists for a specific service type
+ */
+export function hasApiKeyForService(serviceType: 'job-search' | 'local-business'): boolean {
+  const keys = getApiKeysByServiceType(serviceType);
+  return keys.length > 0 && keys.some(k => k.isActive);
+}
+
+/**
  * Updates credits used for an API key (for tracking usage)
  */
 export function updateCreditsUsed(id: string, creditsUsed: number): boolean {

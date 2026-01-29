@@ -4,31 +4,39 @@ import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import SettingsView from '@/components/SettingsView';
 import ResultsDisplay from '@/components/ResultsDisplay';
+import LocalBusinessResultsDisplay from '@/components/LocalBusinessResultsDisplay';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { searchJobs, SearchJobsParams, ApiKeyError, ApiError } from '@/lib/jsearch-api';
+import { searchLocalBusinesses, LocalBusinessSearchParams } from '@/lib/local-business-api';
+import { ApiKeyError as LocalBusinessApiKeyError, ApiError as LocalBusinessApiError } from '@/lib/local-business-api';
 import { JobSearchResponse } from '@/types/job';
 import { jobToDisplay, JobDisplay } from '@/types/job';
+import { LocalBusinessSearchResponse, LocalBusinessDisplay, businessToDisplay } from '@/types/local-business';
 import { hasApiKey } from '@/lib/api-key-storage';
+import { hasApiKeyForService } from '@/lib/api-keys-storage';
 
 const SIDEBAR_WIDTH_KEY = 'job-search-sidebar-width';
 const DEFAULT_SIDEBAR_WIDTH = 320; // w-80 = 320px
 
-type MainView = 'search' | 'settings';
+type MainView = 'search' | 'local-businesses' | 'settings';
 
 export default function Home() {
   const [mainView, setMainView] = useState<MainView>('search');
-  const [settingsSubSection, setSettingsSubSection] = useState<'api-keys'>('api-keys');
+  const [settingsSubSection, setSettingsSubSection] = useState<'api-keys' | 'local-business-api-keys'>('api-keys');
   const [hasApiKeyConfigured, setHasApiKeyConfigured] = useState(false);
+  const [hasLocalBusinessApiKeyConfigured, setHasLocalBusinessApiKeyConfigured] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<JobDisplay[]>([]);
+  const [localBusinessResults, setLocalBusinessResults] = useState<LocalBusinessDisplay[]>([]);
   const [totalResults, setTotalResults] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
 
   useEffect(() => {
-    // Check if API key exists on mount
+    // Check if API keys exist on mount
     setHasApiKeyConfigured(hasApiKey());
+    setHasLocalBusinessApiKeyConfigured(hasApiKeyForService('local-business'));
     
     // Load saved sidebar width from localStorage
     const savedWidth = localStorage.getItem(SIDEBAR_WIDTH_KEY);
@@ -87,10 +95,63 @@ export default function Home() {
     }
   };
 
+  const handleLocalBusinessSearch = async (params: LocalBusinessSearchParams) => {
+    if (!hasLocalBusinessApiKeyConfigured) {
+      setError('Please configure your Local Business RapidAPI key first');
+      setMainView('settings');
+      setSettingsSubSection('local-business-api-keys');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
+    setLocalBusinessResults([]);
+    setSearchResults([]); // Clear job results when searching businesses
+
+    try {
+      const response: LocalBusinessSearchResponse = await searchLocalBusinesses(params);
+      
+      if (response.data && response.data.length > 0) {
+        const displayBusinesses = response.data.map(business => businessToDisplay(business));
+        setLocalBusinessResults(displayBusinesses);
+        setTotalResults(displayBusinesses.length);
+        setSuccess(`Found ${displayBusinesses.length} business(es)`);
+        // Switch to local businesses view after successful search
+        setMainView('local-businesses');
+      } else {
+        setLocalBusinessResults([]);
+        setSuccess('No businesses found. Try adjusting your search parameters.');
+      }
+    } catch (err) {
+      if (err instanceof LocalBusinessApiKeyError) {
+        setError(err.message);
+        setHasLocalBusinessApiKeyConfigured(false);
+        setMainView('settings');
+        setSettingsSubSection('local-business-api-keys');
+      } else if (err instanceof LocalBusinessApiError) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
+      setLocalBusinessResults([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleApiKeyChange = (hasKey: boolean) => {
     setHasApiKeyConfigured(hasKey);
     if (!hasKey) {
       setSearchResults([]);
+      setError(null);
+    }
+  };
+
+  const handleLocalBusinessApiKeyChange = (hasKey: boolean) => {
+    setHasLocalBusinessApiKeyConfigured(hasKey);
+    if (!hasKey) {
+      setLocalBusinessResults([]);
       setError(null);
     }
   };
@@ -100,7 +161,9 @@ export default function Home() {
       {/* Sidebar */}
       <Sidebar
         onSearch={handleSearch}
+        onLocalBusinessSearch={handleLocalBusinessSearch}
         isSearchDisabled={!hasApiKeyConfigured || isLoading}
+        isLocalBusinessSearchDisabled={!hasLocalBusinessApiKeyConfigured || isLoading}
         width={sidebarWidth}
         onResize={handleSidebarResize}
         onNavigate={setMainView}
@@ -114,15 +177,29 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900 mb-1">
-                {mainView === 'settings' ? 'Settings' : 'Job Search'}
+                {mainView === 'settings' 
+                  ? 'Settings' 
+                  : mainView === 'local-businesses'
+                  ? 'Local Business Search'
+                  : 'Job Search'}
               </h1>
               <p className="text-sm text-gray-600">
                 {mainView === 'settings'
                   ? 'Manage your application settings'
-                  : 'Search for available jobs using this app'}
+                  : mainView === 'local-businesses'
+                  ? 'Search for local businesses using this app'
+                  : 'search for companies that are hiring for specific roles'}
               </p>
             </div>
             {mainView === 'search' && (
+              <button
+                onClick={() => setMainView('settings')}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Settings
+              </button>
+            )}
+            {mainView === 'local-businesses' && (
               <button
                 onClick={() => setMainView('settings')}
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
@@ -176,7 +253,65 @@ export default function Home() {
               activeSubSection={settingsSubSection}
               onSubSectionChange={setSettingsSubSection}
               onApiKeyChange={handleApiKeyChange}
+              onLocalBusinessApiKeyChange={handleLocalBusinessApiKeyChange}
             />
+          ) : mainView === 'local-businesses' ? (
+            <>
+              {/* Loading State */}
+              {isLoading && (
+                <div className="flex items-center justify-center h-full">
+                  <LoadingSpinner />
+                </div>
+              )}
+
+              {/* Results */}
+              {!isLoading && localBusinessResults.length > 0 && (
+                <LocalBusinessResultsDisplay 
+                  businesses={localBusinessResults} 
+                  totalResults={totalResults}
+                />
+              )}
+
+              {/* Empty State */}
+              {!isLoading && localBusinessResults.length === 0 && hasLocalBusinessApiKeyConfigured && !error && (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No results yet</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Enter your search criteria in the sidebar and click "Search Businesses" to find local businesses.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* No API Key State */}
+              {!hasLocalBusinessApiKeyConfigured && !isLoading && (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    </svg>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">API Key Required</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Please configure your Local Business RapidAPI key in Settings to start searching for businesses.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setMainView('settings');
+                        setSettingsSubSection('local-business-api-keys');
+                      }}
+                      className="mt-4 px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors shadow-sm"
+                    >
+                      Go to Settings
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <>
               {/* Loading State */}

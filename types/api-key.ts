@@ -1,5 +1,7 @@
 // API Key types for managing multiple API keys with metadata
 
+export type ServiceType = 'job-search' | 'local-business';
+
 export interface ApiKey {
   id: string;
   name: string;
@@ -9,6 +11,7 @@ export interface ApiKey {
   creditsUsed: number;
   rpmLimit?: number;
   isActive: boolean;
+  serviceType?: ServiceType; // Optional field to distinguish service types
   createdAt: string;
   updatedAt: string;
 }
