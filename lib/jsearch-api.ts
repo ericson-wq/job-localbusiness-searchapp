@@ -86,7 +86,21 @@ function buildQueryParams(params: SearchJobsParams): string {
   // Only include fields parameter if explicitly provided
   // If not provided, API returns all fields by default
   if (params.fields && params.fields.trim()) {
-    queryParams.append('fields', params.fields.trim());
+    // Sanitize fields: remove extra whitespace, filter out empty values
+    const sanitizedFields = params.fields
+      .split(',')
+      .map(f => f.trim())
+      .filter(f => f.length > 0)
+      .join(',');
+    
+    if (sanitizedFields) {
+      queryParams.append('fields', sanitizedFields);
+      
+      // Log fields being sent in development for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Fields parameter:', sanitizedFields);
+      }
+    }
   }
   
   return queryParams.toString();
@@ -142,14 +156,44 @@ export async function searchJobs(params: SearchJobsParams): Promise<JobSearchRes
     if (!response.ok) {
       const errorText = await response.text();
       let errorMessage = `API request failed with status ${response.status}`;
+      let errorDetails: any = null;
       
       try {
         const errorJson = JSON.parse(errorText);
+        errorDetails = errorJson;
+        
+        // Try to extract meaningful error message
         if (errorJson.message) {
           errorMessage = errorJson.message;
+        } else if (errorJson.error) {
+          errorMessage = typeof errorJson.error === 'string' 
+            ? errorJson.error 
+            : errorJson.error.message || JSON.stringify(errorJson.error);
+        } else if (errorJson.errors && Array.isArray(errorJson.errors) && errorJson.errors.length > 0) {
+          errorMessage = errorJson.errors.map((e: any) => e.message || e).join(', ');
+        }
+        
+        // Log full error details in development
+        if (process.env.NODE_ENV === 'development') {
+          console.error('API Error Details:', {
+            status: response.status,
+            statusText: response.statusText,
+            errorJson,
+            url: url.split('?')[0], // Don't log full URL with API key
+            params: Object.fromEntries(new URLSearchParams(queryString))
+          });
         }
       } catch {
-        // If parsing fails, use the default message
+        // If parsing fails, include the raw error text
+        errorMessage = errorText || errorMessage;
+        if (process.env.NODE_ENV === 'development') {
+          console.error('API Error (non-JSON):', {
+            status: response.status,
+            statusText: response.statusText,
+            errorText,
+            url: url.split('?')[0]
+          });
+        }
       }
 
       // Handle specific error cases
@@ -157,6 +201,29 @@ export async function searchJobs(params: SearchJobsParams): Promise<JobSearchRes
         throw new ApiKeyError('Invalid API key. Please check your RapidAPI key.');
       } else if (response.status === 429) {
         throw new ApiError('Rate limit exceeded. Please try again later.', 429);
+      } else if (response.status === 400) {
+        // For 400 errors, provide more context
+        let enhancedMessage = errorMessage;
+        
+        // Check if error is related to fields parameter
+        const errorLower = errorMessage.toLowerCase();
+        const isFieldsError = errorLower.includes('field') || 
+                             errorLower.includes('invalid') ||
+                             (errorDetails && (
+                               errorDetails.param === 'fields' ||
+                               errorDetails.field ||
+                               (typeof errorDetails === 'string' && errorDetails.toLowerCase().includes('field'))
+                             ));
+        
+        if (isFieldsError && params.fields) {
+          enhancedMessage = `${errorMessage} (Fields parameter: ${params.fields}). Some field names may not be supported by the API. Try selecting fewer fields or different fields.`;
+        } else if (errorDetails) {
+          enhancedMessage = errorDetails.param 
+            ? `${errorMessage} (Parameter: ${errorDetails.param})`
+            : errorMessage;
+        }
+        
+        throw new ApiError(enhancedMessage, response.status);
       } else {
         throw new ApiError(errorMessage, response.status);
       }

@@ -249,6 +249,44 @@ const JOB_PUBLISHERS = [
   'Tesla Careers',
 ].sort((a, b) => a.localeCompare(b));
 
+// Validated list of fields that are known to work with the JSearch API fields parameter
+// Some fields may be returned by default but cannot be explicitly requested via the fields parameter
+// Fields that are commonly problematic are excluded from this list
+const VALIDATED_FIELDS = new Set([
+  'job_id',
+  'job_title',
+  'employer_name',
+  'employer_logo',
+  'employer_website',
+  'job_publisher',
+  'job_employment_type',
+  'job_employment_types',
+  'job_apply_link',
+  'job_apply_is_direct',
+  'apply_options',
+  'job_description',
+  'job_is_remote',
+  'job_posted_at',
+  'job_posted_at_timestamp',
+  'job_posted_at_datetime_utc',
+  'job_location',
+  'job_city',
+  'job_state',
+  'job_country',
+  'job_latitude',
+  'job_longitude',
+  'job_benefits',
+  'job_google_link',
+  'job_min_salary',
+  'job_max_salary',
+  'job_salary_period',
+  'job_highlights',
+  // Excluded fields that may cause 400 errors:
+  // - job_onet_soc: May not be valid for fields parameter
+  // - job_onet_job_zone: May not be valid for fields parameter
+  // These fields will still be returned by default when fields parameter is not used
+]);
+
 // Available job fields for field projection
 const JOB_FIELDS = [
   { value: 'job_id', label: 'Job ID' },
@@ -451,7 +489,26 @@ export default function SearchSection({ onSearch, isDisabled }: SearchSectionPro
     }
 
     if (fields.length > 0) {
-      params.fields = fields.join(',');
+      // Filter out any empty or invalid field values
+      // Only include fields that are in the validated list
+      const validFields = fields
+        .filter(f => f && f.trim().length > 0)
+        .filter(f => VALIDATED_FIELDS.has(f.trim()));
+      
+      // Check if any fields were filtered out
+      const invalidFields = fields
+        .filter(f => f && f.trim().length > 0)
+        .filter(f => !VALIDATED_FIELDS.has(f.trim()));
+      
+      if (invalidFields.length > 0 && process.env.NODE_ENV === 'development') {
+        console.warn('Filtered out invalid fields:', invalidFields);
+      }
+      
+      if (validFields.length > 0) {
+        params.fields = validFields.join(',');
+      }
+      // If no valid fields remain after filtering, don't include the fields parameter
+      // This allows the API to return all fields by default
     }
 
     onSearch(params);
