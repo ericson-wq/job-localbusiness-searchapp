@@ -37,14 +37,39 @@ export async function POST(request: NextRequest) {
     let failureCount = 0;
 
     for (const job of jobs) {
-      // Prepare the JSON payload for a single job
+      // Prepare the JSON payload for a single job - includes all fields
       const payload = {
+        job_id: job.job_id,
         job_title: job.job_title,
         employer_name: job.employer_name,
+        employer_logo: job.employer_logo,
         employer_website: job.employer_website,
+        job_publisher: job.job_publisher,
         job_employment_type: job.job_employment_type,
+        job_employment_types: job.job_employment_types,
         job_apply_link: job.job_apply_link,
+        job_apply_is_direct: job.job_apply_is_direct,
+        apply_options: job.apply_options,
+        job_description: job.job_description,
+        job_is_remote: job.job_is_remote,
+        job_posted_at: job.job_posted_at,
+        job_posted_at_timestamp: job.job_posted_at_timestamp,
+        job_posted_at_datetime_utc: job.job_posted_at_datetime_utc,
+        job_location: job.job_location,
+        job_city: job.job_city,
+        job_state: job.job_state,
         job_country: job.job_country,
+        job_latitude: job.job_latitude,
+        job_longitude: job.job_longitude,
+        job_benefits: job.job_benefits,
+        job_google_link: job.job_google_link,
+        job_salary: job.job_salary,
+        job_min_salary: job.job_min_salary,
+        job_max_salary: job.job_max_salary,
+        job_salary_period: job.job_salary_period,
+        job_highlights: job.job_highlights,
+        job_onet_soc: job.job_onet_soc,
+        job_onet_job_zone: job.job_onet_job_zone,
       };
 
       try {

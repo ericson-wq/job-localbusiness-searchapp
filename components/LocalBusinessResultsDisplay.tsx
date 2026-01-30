@@ -17,6 +17,7 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
   const [isExportingCsv, setIsExportingCsv] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState<LocalBusinessDisplay | null>(null);
   const [isClayModalOpen, setIsClayModalOpen] = useState(false);
+  const [selectedBusinessIndices, setSelectedBusinessIndices] = useState<Set<number>>(new Set());
 
   const totalPages = Math.ceil(businesses.length / RESULTS_PER_PAGE);
   const paginatedBusinesses = useMemo(() => {
@@ -25,19 +26,87 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
     return businesses.slice(startIndex, endIndex);
   }, [businesses, currentPage]);
 
+  // Get selected businesses based on indices
+  const selectedBusinesses = useMemo(() => {
+    return businesses.filter((_, index) => selectedBusinessIndices.has(index));
+  }, [businesses, selectedBusinessIndices]);
+
+  // Check if all businesses on current page are selected
+  const areAllPageBusinessesSelected = useMemo(() => {
+    if (paginatedBusinesses.length === 0) return false;
+    const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
+    return paginatedBusinesses.every((_, index) => selectedBusinessIndices.has(startIndex + index));
+  }, [paginatedBusinesses, selectedBusinessIndices, currentPage]);
+
+  // Check if some (but not all) businesses on current page are selected
+  const areSomePageBusinessesSelected = useMemo(() => {
+    if (paginatedBusinesses.length === 0) return false;
+    const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
+    const selectedCount = paginatedBusinesses.filter((_, index) => selectedBusinessIndices.has(startIndex + index)).length;
+    return selectedCount > 0 && selectedCount < paginatedBusinesses.length;
+  }, [paginatedBusinesses, selectedBusinessIndices, currentPage]);
+
+  // Handle individual checkbox toggle
+  const toggleBusinessSelection = (index: number) => {
+    setSelectedBusinessIndices(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  // Handle select all on current page
+  const toggleSelectAllPage = () => {
+    const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
+    const endIndex = startIndex + paginatedBusinesses.length;
+    
+    setSelectedBusinessIndices(prev => {
+      const newSet = new Set(prev);
+      const allSelected = paginatedBusinesses.every((_, idx) => newSet.has(startIndex + idx));
+      
+      if (allSelected) {
+        // Deselect all on current page
+        for (let i = startIndex; i < endIndex; i++) {
+          newSet.delete(i);
+        }
+      } else {
+        // Select all on current page
+        for (let i = startIndex; i < endIndex; i++) {
+          newSet.add(i);
+        }
+      }
+      return newSet;
+    });
+  };
+
+  // Handle select all businesses
+  const toggleSelectAll = () => {
+    const allSelected = businesses.every((_, index) => selectedBusinessIndices.has(index));
+    
+    if (allSelected) {
+      setSelectedBusinessIndices(new Set());
+    } else {
+      setSelectedBusinessIndices(new Set(businesses.map((_, index) => index)));
+    }
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCsvExport = () => {
-    if (businesses.length === 0) {
+    if (selectedBusinesses.length === 0) {
       return;
     }
 
     setIsExportingCsv(true);
     try {
-      downloadLocalBusinessCsv(businesses);
+      downloadLocalBusinessCsv(selectedBusinesses);
     } catch (error) {
       console.error('Failed to export CSV:', error);
     } finally {
@@ -76,39 +145,59 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCsvExport}
-            disabled={isExportingCsv || businesses.length === 0}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-2 shadow-sm"
-          >
-            {isExportingCsv ? (
-              <>
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Exporting...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export to CSV
-              </>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-700 font-medium">
+              {selectedBusinesses.length > 0 ? (
+                <span className="text-blue-600 font-semibold">{selectedBusinesses.length}</span>
+              ) : (
+                <span className="text-gray-500">0</span>
+              )}{' '}
+              of {businesses.length} selected
+            </span>
+            {selectedBusinesses.length > 0 && (
+              <button
+                onClick={toggleSelectAll}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+              >
+                {selectedBusinesses.length === businesses.length ? 'Deselect All' : 'Select All'}
+              </button>
             )}
-          </button>
-          <button
-            onClick={() => setIsClayModalOpen(true)}
-            disabled={businesses.length === 0}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-2 shadow-sm"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Send to Clay
-          </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCsvExport}
+              disabled={isExportingCsv || selectedBusinesses.length === 0}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-2 shadow-sm"
+            >
+              {isExportingCsv ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export to CSV
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => setIsClayModalOpen(true)}
+              disabled={selectedBusinesses.length === 0}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-2 shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Send to Clay
+            </button>
+          </div>
         </div>
       </div>
 
@@ -118,6 +207,20 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={areAllPageBusinessesSelected && paginatedBusinesses.length > 0}
+                      ref={(input) => {
+                        if (input) input.indeterminate = areSomePageBusinessesSelected;
+                      }}
+                      onChange={toggleSelectAllPage}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                      aria-label="Select all businesses on this page"
+                    />
+                  </div>
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
                 </th>
@@ -149,8 +252,20 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedBusinesses.map((business, index) => {
+                const absoluteIndex = (currentPage - 1) * RESULTS_PER_PAGE + index;
+                const isSelected = selectedBusinessIndices.has(absoluteIndex);
+
                 return (
-                  <tr key={`${business.business_id}-${index}`} className="hover:bg-gray-50 transition-colors">
+                  <tr key={`${business.business_id}-${index}`} className={`hover:bg-gray-50 transition-colors ${isSelected ? 'bg-blue-50' : ''}`}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleBusinessSelection(absoluteIndex)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                        aria-label={`Select ${business.name}`}
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
                         {business.name}
@@ -517,7 +632,7 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
       <LocalBusinessClayWebhookModal
         isOpen={isClayModalOpen}
         onClose={() => setIsClayModalOpen(false)}
-        businesses={businesses}
+        businesses={selectedBusinesses}
       />
     </div>
   );

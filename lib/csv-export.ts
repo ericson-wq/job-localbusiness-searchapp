@@ -21,38 +21,85 @@ function escapeCsvField(field: string | null | undefined): string {
 
 /**
  * Converts an array of JobDisplay objects to CSV format
+ * Includes all fields with JSON objects serialized as JSON strings
  */
 export function jobsToCsv(jobs: JobDisplay[]): string {
   if (jobs.length === 0) {
     return '';
   }
 
-  // CSV Header
+  // CSV Header - includes all fields
   const headers = [
+    'Job ID',
     'Job Title',
     'Employer Name',
     'Employer Logo',
     'Employer Website',
     'Job Publisher',
     'Employment Type',
-    'Country',
-    'Job Posted At',
+    'Employment Types',
+    'Job Apply Link',
+    'Job Apply Is Direct',
+    'Apply Options (JSON)',
     'Job Description',
-    'Source Link'
+    'Job Is Remote',
+    'Job Posted At',
+    'Job Posted At Timestamp',
+    'Job Posted At Datetime UTC',
+    'Job Location',
+    'Job City',
+    'Job State',
+    'Job Country',
+    'Job Latitude',
+    'Job Longitude',
+    'Job Benefits',
+    'Job Google Link',
+    'Job Salary',
+    'Job Min Salary',
+    'Job Max Salary',
+    'Job Salary Period',
+    'Job Highlights Qualifications (JSON)',
+    'Job Highlights Benefits (JSON)',
+    'Job Highlights Responsibilities (JSON)',
+    'Job ONET SOC',
+    'Job ONET Job Zone'
   ];
 
   // Create CSV rows
   const rows = jobs.map(job => [
+    escapeCsvField(job.job_id),
     escapeCsvField(job.job_title),
     escapeCsvField(job.employer_name),
     escapeCsvField(job.employer_logo),
     escapeCsvField(job.employer_website),
     escapeCsvField(job.job_publisher),
     escapeCsvField(job.job_employment_type),
-    escapeCsvField(job.job_country),
-    escapeCsvField(job.job_posted_at),
-    escapeCsvField(job.job_description),
+    escapeCsvField(job.job_employment_types?.join('; ') || ''),
     escapeCsvField(job.job_apply_link),
+    escapeCsvField(job.job_apply_is_direct ? 'Yes' : 'No'),
+    escapeCsvField(JSON.stringify(job.apply_options || [])),
+    escapeCsvField(job.job_description),
+    escapeCsvField(job.job_is_remote ? 'Yes' : 'No'),
+    escapeCsvField(job.job_posted_at),
+    escapeCsvField(job.job_posted_at_timestamp?.toString() || ''),
+    escapeCsvField(job.job_posted_at_datetime_utc),
+    escapeCsvField(job.job_location),
+    escapeCsvField(job.job_city),
+    escapeCsvField(job.job_state),
+    escapeCsvField(job.job_country),
+    escapeCsvField(job.job_latitude?.toString() || ''),
+    escapeCsvField(job.job_longitude?.toString() || ''),
+    escapeCsvField(job.job_benefits?.join('; ') || ''),
+    escapeCsvField(job.job_google_link),
+    escapeCsvField(job.job_salary?.toString() || ''),
+    escapeCsvField(job.job_min_salary?.toString() || ''),
+    escapeCsvField(job.job_max_salary?.toString() || ''),
+    escapeCsvField(job.job_salary_period),
+    escapeCsvField(JSON.stringify(job.job_highlights?.Qualifications || [])),
+    escapeCsvField(JSON.stringify(job.job_highlights?.Benefits || [])),
+    escapeCsvField(JSON.stringify(job.job_highlights?.Responsibilities || [])),
+    escapeCsvField(job.job_onet_soc),
+    escapeCsvField(job.job_onet_job_zone),
   ]);
 
   // Combine header and rows
