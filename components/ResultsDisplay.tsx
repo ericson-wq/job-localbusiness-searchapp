@@ -322,12 +322,12 @@ export default function ResultsDisplay({ jobs, totalResults, onExport }: Results
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {job.job_title}
+                        {job.job_title || <span className="text-gray-400 italic">Not available</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {job.employer_name}
+                        {job.employer_name || <span className="text-gray-400 italic">Not available</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -350,17 +350,21 @@ export default function ResultsDisplay({ jobs, totalResults, onExport }: Results
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {job.job_publisher}
+                        {job.job_publisher || <span className="text-gray-400 italic">Not available</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {job.job_employment_type}
-                      </span>
+                      {job.job_employment_type ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          {job.job_employment_type}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-400 italic">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {job.job_country}
+                        {job.job_country || <span className="text-gray-400 italic">Not available</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
