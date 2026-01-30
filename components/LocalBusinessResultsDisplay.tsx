@@ -168,20 +168,28 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <span className="text-sm font-medium text-gray-900">{business.rating}</span>
-                        <svg className="w-4 h-4 text-yellow-400 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
+                        {business.rating !== undefined && business.rating !== null ? (
+                          <>
+                            <span className="text-sm font-medium text-gray-900">{business.rating}</span>
+                            <svg className="w-4 h-4 text-yellow-400 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          </>
+                        ) : (
+                          <span className="text-sm text-gray-400">N/A</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {business.review_count.toLocaleString()}
+                        {business.review_count !== undefined && business.review_count !== null
+                          ? business.review_count.toLocaleString()
+                          : 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-900">
-                        {business.type}
+                        {business.type || 'N/A'}
                       </div>
                       {business.subtypes && business.subtypes.length > 0 && (
                         <div className="text-xs text-gray-500 mt-1">
@@ -191,15 +199,19 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        business.business_status === 'OPEN'
-                          ? 'bg-green-100 text-green-800'
-                          : business.business_status === 'CLOSED_TEMPORARILY'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {business.business_status}
-                      </span>
+                      {business.business_status ? (
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          business.business_status === 'OPEN'
+                            ? 'bg-green-100 text-green-800'
+                            : business.business_status === 'CLOSED_TEMPORARILY'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {business.business_status}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-400">N/A</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {business.website ? (
@@ -331,7 +343,7 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
                   {selectedBusiness.name}
                 </h2>
                 <p className="text-sm text-gray-600">
-                  {selectedBusiness.type} • {selectedBusiness.full_address}
+                  {selectedBusiness.type || 'N/A'} • {selectedBusiness.full_address || selectedBusiness.address || 'N/A'}
                 </p>
               </div>
               <button
@@ -361,23 +373,36 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Rating</dt>
                       <dd className="mt-1 text-sm text-gray-900 flex items-center">
-                        {selectedBusiness.rating} <svg className="w-4 h-4 text-yellow-400 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg> ({selectedBusiness.review_count.toLocaleString()} reviews)
+                        {selectedBusiness.rating !== undefined && selectedBusiness.rating !== null ? (
+                          <>
+                            {selectedBusiness.rating} <svg className="w-4 h-4 text-yellow-400 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            {selectedBusiness.review_count !== undefined && selectedBusiness.review_count !== null && (
+                              <span className="ml-1">({selectedBusiness.review_count.toLocaleString()} reviews)</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-gray-400">N/A</span>
+                        )}
                       </dd>
                     </div>
                     <div>
                       <dt className="text-sm font-medium text-gray-500">Status</dt>
                       <dd className="mt-1">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          selectedBusiness.business_status === 'OPEN'
-                            ? 'bg-green-100 text-green-800'
-                            : selectedBusiness.business_status === 'CLOSED_TEMPORARILY'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {selectedBusiness.business_status}
-                        </span>
+                        {selectedBusiness.business_status ? (
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            selectedBusiness.business_status === 'OPEN'
+                              ? 'bg-green-100 text-green-800'
+                              : selectedBusiness.business_status === 'CLOSED_TEMPORARILY'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {selectedBusiness.business_status}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400">N/A</span>
+                        )}
                       </dd>
                     </div>
                     <div>
@@ -464,17 +489,19 @@ export default function LocalBusinessResultsDisplay({ businesses, totalResults }
 
             {/* Footer */}
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 flex-shrink-0">
-              <a
-                href={selectedBusiness.place_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
-              >
-                <span>View on Google Maps</span>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
+              {selectedBusiness.place_link && (
+                <a
+                  href={selectedBusiness.place_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+                >
+                  <span>View on Google Maps</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </a>
+              )}
               <button
                 onClick={closeBusinessModal}
                 className="px-6 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 text-sm font-medium transition-colors"
