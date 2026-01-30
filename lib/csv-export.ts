@@ -3,10 +3,20 @@ import { LocalBusinessDisplay } from '@/types/local-business';
 
 /**
  * Escapes a CSV field value
+ * Handles null, undefined, numbers, booleans, and objects
  */
-function escapeCsvField(field: string | null | undefined): string {
+function escapeCsvField(field: string | number | boolean | null | undefined | any): string {
   if (field === null || field === undefined) {
     return '';
+  }
+  
+  // Handle arrays and objects by converting to JSON string
+  if (typeof field === 'object' && !Array.isArray(field)) {
+    try {
+      return JSON.stringify(field);
+    } catch {
+      return '';
+    }
   }
   
   const stringValue = String(field);

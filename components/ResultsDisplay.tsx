@@ -288,7 +288,7 @@ export default function ResultsDisplay({ jobs, totalResults, onExport }: Results
             <tbody className="bg-white divide-y divide-gray-200">
               {paginatedJobs.map((job, index) => {
                 const absoluteIndex = (currentPage - 1) * RESULTS_PER_PAGE + index;
-                const sourceLinkIsLong = job.job_apply_link.length > 40;
+                const sourceLinkIsLong = (job.job_apply_link?.length || 0) > 40;
                 const isSelected = selectedJobIndices.has(absoluteIndex);
 
                 return (
