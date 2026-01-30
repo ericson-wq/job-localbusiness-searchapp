@@ -1,6 +1,9 @@
 import { getActiveApiKeyByServiceType, hasApiKeyForService } from './api-keys-storage';
 import { LocalBusinessSearchResponse, LocalBusinessSearchParams } from '@/types/local-business';
 
+// Re-export types for convenience
+export type { LocalBusinessSearchParams } from '@/types/local-business';
+
 const DEFAULT_LOCAL_BUSINESS_HOST = 'local-business-data.p.rapidapi.com';
 const DEFAULT_LOCAL_BUSINESS_BASE_URL = 'https://local-business-data.p.rapidapi.com';
 
