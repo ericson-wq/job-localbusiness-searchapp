@@ -70,9 +70,12 @@ export default function SearchForm({ onSubmit, isDisabled }: SearchFormProps) {
       params.exclude_job_publishers = excludeJobPublishers.trim();
     }
 
+    // Only include fields parameter if explicitly set - otherwise get all fields
+    // Note: Leaving fields empty gets all fields from the API
     if (fields.trim()) {
       params.fields = fields.trim();
     }
+    // If fields is empty, don't send the parameter to get all fields
 
     onSubmit(params);
   };
@@ -129,11 +132,15 @@ export default function SearchForm({ onSubmit, isDisabled }: SearchFormProps) {
               id="num_pages"
               type="number"
               min="1"
+              max="10"
               value={numPages}
               onChange={(e) => setNumPages(parseInt(e.target.value) || 1)}
               disabled={isDisabled}
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Each page returns up to 10 jobs. Set to 1 for ~10 jobs, 2 for ~20 jobs, etc.
+            </p>
           </div>
 
           {/* Country */}

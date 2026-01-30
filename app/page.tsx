@@ -68,8 +68,42 @@ export default function Home() {
     try {
       const response: JobSearchResponse = await searchJobs(params);
       
+      // Log response for debugging (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('API Response:', {
+          status: response.status,
+          request_id: response.request_id,
+          dataLength: response.data?.length,
+          firstJob: response.data?.[0],
+        });
+      }
+      
       if (response.data && response.data.length > 0) {
-        const displayJobs = response.data.map(job => jobToDisplay(job));
+        // Convert all jobs to display format, handling missing fields
+        const displayJobs = response.data.map((job, index) => {
+          try {
+            const displayJob = jobToDisplay(job);
+            // Log if critical fields are missing
+            if (process.env.NODE_ENV === 'development' && (!displayJob.job_title || !displayJob.employer_name)) {
+              console.warn(`Job ${index} missing critical fields:`, { job, displayJob });
+            }
+            return displayJob;
+          } catch (error) {
+            console.error(`Error converting job ${index} to display format:`, error, job);
+            // Return a minimal valid job display if conversion fails
+            return jobToDisplay({
+              job_id: job?.job_id || `unknown-${index}`,
+              job_title: job?.job_title || 'Unknown Job Title',
+              employer_name: job?.employer_name || 'Unknown Employer',
+              job_publisher: job?.job_publisher || '',
+              job_employment_type: job?.job_employment_type || '',
+              job_apply_link: job?.job_apply_link || '',
+              job_country: job?.job_country || '',
+              job_description: job?.job_description || '',
+              job_posted_at: job?.job_posted_at || '',
+            });
+          }
+        });
         setSearchResults(displayJobs);
         setTotalResults(displayJobs.length);
         setSuccess(`Found ${displayJobs.length} job(s)`);

@@ -83,8 +83,10 @@ function buildQueryParams(params: SearchJobsParams): string {
     queryParams.append('exclude_job_publishers', params.exclude_job_publishers);
   }
   
-  if (params.fields) {
-    queryParams.append('fields', params.fields);
+  // Only include fields parameter if explicitly provided
+  // If not provided, API returns all fields by default
+  if (params.fields && params.fields.trim()) {
+    queryParams.append('fields', params.fields.trim());
   }
   
   return queryParams.toString();

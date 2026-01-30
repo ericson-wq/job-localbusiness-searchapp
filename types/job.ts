@@ -106,38 +106,50 @@ export interface JobDisplay {
 
 // Helper function to convert Job to JobDisplay
 // Handles missing fields gracefully with defaults
-export function jobToDisplay(job: Job): JobDisplay {
+// Safely accesses properties that might not exist in API response
+export function jobToDisplay(job: any): JobDisplay {
+  // Safely extract values, handling both missing properties and null/undefined
+  const safeGet = (key: string, defaultValue: any = '') => {
+    return job?.[key] !== undefined && job[key] !== null ? job[key] : defaultValue;
+  };
+
   return {
-    job_id: job.job_id || '',
-    job_title: job.job_title || '',
-    employer_name: job.employer_name || '',
-    employer_logo: job.employer_logo || null,
-    employer_website: job.employer_website || null,
-    job_publisher: job.job_publisher || '',
-    job_employment_type: job.job_employment_type || '',
-    job_employment_types: job.job_employment_types || [],
-    job_apply_link: job.job_apply_link || '',
-    job_apply_is_direct: job.job_apply_is_direct ?? false,
-    apply_options: job.apply_options || [],
-    job_description: job.job_description || '',
-    job_is_remote: job.job_is_remote ?? false,
-    job_posted_at: job.job_posted_at || '',
-    job_posted_at_timestamp: job.job_posted_at_timestamp || 0,
-    job_posted_at_datetime_utc: job.job_posted_at_datetime_utc || '',
-    job_location: job.job_location || '',
-    job_city: job.job_city || '',
-    job_state: job.job_state || '',
-    job_country: job.job_country || '',
-    job_latitude: job.job_latitude ?? 0,
-    job_longitude: job.job_longitude ?? 0,
-    job_benefits: job.job_benefits || null,
-    job_google_link: job.job_google_link || '',
-    job_salary: job.job_salary ?? null,
-    job_min_salary: job.job_min_salary ?? null,
-    job_max_salary: job.job_max_salary ?? null,
-    job_salary_period: job.job_salary_period || null,
-    job_highlights: job.job_highlights || { Qualifications: [], Benefits: [], Responsibilities: [] },
-    job_onet_soc: job.job_onet_soc || '',
-    job_onet_job_zone: job.job_onet_job_zone || '',
+    job_id: safeGet('job_id', ''),
+    job_title: safeGet('job_title', ''),
+    employer_name: safeGet('employer_name', ''),
+    employer_logo: safeGet('employer_logo', null),
+    employer_website: safeGet('employer_website', null),
+    job_publisher: safeGet('job_publisher', ''),
+    job_employment_type: safeGet('job_employment_type', ''),
+    job_employment_types: Array.isArray(job?.job_employment_types) ? job.job_employment_types : [],
+    job_apply_link: safeGet('job_apply_link', ''),
+    job_apply_is_direct: safeGet('job_apply_is_direct', false),
+    apply_options: Array.isArray(job?.apply_options) ? job.apply_options : [],
+    job_description: safeGet('job_description', ''),
+    job_is_remote: safeGet('job_is_remote', false),
+    job_posted_at: safeGet('job_posted_at', ''),
+    job_posted_at_timestamp: safeGet('job_posted_at_timestamp', 0),
+    job_posted_at_datetime_utc: safeGet('job_posted_at_datetime_utc', ''),
+    job_location: safeGet('job_location', ''),
+    job_city: safeGet('job_city', ''),
+    job_state: safeGet('job_state', ''),
+    job_country: safeGet('job_country', ''),
+    job_latitude: typeof job?.job_latitude === 'number' ? job.job_latitude : 0,
+    job_longitude: typeof job?.job_longitude === 'number' ? job.job_longitude : 0,
+    job_benefits: Array.isArray(job?.job_benefits) ? job.job_benefits : null,
+    job_google_link: safeGet('job_google_link', ''),
+    job_salary: typeof job?.job_salary === 'number' ? job.job_salary : null,
+    job_min_salary: typeof job?.job_min_salary === 'number' ? job.job_min_salary : null,
+    job_max_salary: typeof job?.job_max_salary === 'number' ? job.job_max_salary : null,
+    job_salary_period: safeGet('job_salary_period', null),
+    job_highlights: job?.job_highlights && typeof job.job_highlights === 'object' 
+      ? {
+          Qualifications: Array.isArray(job.job_highlights.Qualifications) ? job.job_highlights.Qualifications : [],
+          Benefits: Array.isArray(job.job_highlights.Benefits) ? job.job_highlights.Benefits : [],
+          Responsibilities: Array.isArray(job.job_highlights.Responsibilities) ? job.job_highlights.Responsibilities : [],
+        }
+      : { Qualifications: [], Benefits: [], Responsibilities: [] },
+    job_onet_soc: safeGet('job_onet_soc', ''),
+    job_onet_job_zone: safeGet('job_onet_job_zone', ''),
   };
 }
